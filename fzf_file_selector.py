@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 from subprocess import PIPE
 
 fzf = os.environ.get("FZF_FILE_SELECTOR_FZF", "fzf")
@@ -19,25 +20,40 @@ def get_buffer_via_fzf(command):
     return proc.stdout
 
 
-def get_buffer_from_items(items):
-    return " ".join(items.split("\n"))
+def get_left(b, c):
+    return b[:c]
 
 
-def get_buffer():
+def get_right(b, c):
+    return b[c:]
+
+
+def get_concat_items(items):
+    return " ".join(items.rstrip("\n").split("\n"))
+
+
+def get_buffer_from_items(b, c, items):
+    concat_items = get_concat_items(items)
+    left = get_left(b, c)
+    right = get_right(b, c)
+    return f"{left} {concat_items} {right}"
+
+
+def get_cursor_from_items(b, c, items):
+    return len(get_left(b, c)) + 1 + len(get_concat_items(items)) + 1
+
+
+def get_buffer_cursor(b, c):
     command = f"{get_fd_command()} | {get_fzf_command()}"
     items = get_buffer_via_fzf(command)
-    return get_buffer_from_items(items)
+    return get_buffer_from_items(b, c, items), get_cursor_from_items(b, c, items)
 
 
-def get_cursor(buffer):
-    return len(buffer)
-
-
-def main():
-    buffer = get_buffer()
-    cursor = get_cursor(buffer)
+def main(args):
+    org_buffer, org_cursor = args[1], int(args[2])
+    buffer, cursor = get_buffer_cursor(org_buffer, org_cursor)
     print(f"{cursor} {buffer}")
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)
