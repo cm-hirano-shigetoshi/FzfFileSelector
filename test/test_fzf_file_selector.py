@@ -8,14 +8,14 @@ def test_get_fd_command():
 
 
 def test_get_fzf_command():
-    expected = "fzf"
+    expected = "fzf --multi"
     response = fzf_file_selector.get_fzf_command()
     assert response == expected
 
 
 def test_get_buffer_from_items():
-    items = "aaa"
-    expected = "aaa"
+    items = "aaa\nbbb"
+    expected = "aaa bbb"
     response = fzf_file_selector.get_buffer_from_items(items)
     assert response == expected
 

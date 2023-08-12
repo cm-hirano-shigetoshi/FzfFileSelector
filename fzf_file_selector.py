@@ -11,7 +11,7 @@ def get_fd_command():
 
 
 def get_fzf_command():
-    return f"{fzf}"
+    return f"{fzf} --multi"
 
 
 def get_buffer_via_fzf(command):
@@ -20,7 +20,7 @@ def get_buffer_via_fzf(command):
 
 
 def get_buffer_from_items(items):
-    return items
+    return " ".join(items.split("\n"))
 
 
 def get_buffer():
