@@ -37,17 +37,49 @@ def test_get_fzf_options():
     assert response == expected
 
 
-def get_left():
-    b = "aaa"
+def test_get_left_01():
+    b = "aaabbb"
     c = 3
-    expected = "aaa"
+    expected = ""
     response = fzf_file_selector.get_left(b, c)
     assert response == expected
 
 
-def get_right():
-    b = "aaa"
+def test_get_left_02():
+    b = "aaa bbb"
     c = 3
+    expected = ""
+    response = fzf_file_selector.get_left(b, c)
+    assert response == expected
+
+
+def test_get_left_03():
+    b = "aaa bbb"
+    c = 4
+    expected = "aaa "
+    response = fzf_file_selector.get_left(b, c)
+    assert response == expected
+
+
+def test_get_right_01():
+    b = "aaabbb"
+    c = 3
+    expected = "bbb"
+    response = fzf_file_selector.get_right(b, c)
+    assert response == expected
+
+
+def test_get_right_02():
+    b = "aaa bbb"
+    c = 3
+    expected = " bbb"
+    response = fzf_file_selector.get_right(b, c)
+    assert response == expected
+
+
+def test_get_right_03():
+    b = "aaa bbb"
+    c = 4
     expected = "bbb"
     response = fzf_file_selector.get_right(b, c)
     assert response == expected
@@ -57,7 +89,7 @@ def test_get_buffer_from_items():
     b = "aaabbb"
     c = 3
     items = "select1\nselect2"
-    expected = "aaa select1 select2 bbb"
+    expected = "select1 select2 bbb"
     response = fzf_file_selector.get_buffer_from_items(b, c, items)
     assert response == expected
 
@@ -66,6 +98,6 @@ def test_get_cursor_from_items():
     b = "aaabbb"
     c = 3
     items = "select1\nselect2"
-    expected = 20
+    expected = 17
     response = fzf_file_selector.get_cursor_from_items(b, c, items)
     assert response == expected

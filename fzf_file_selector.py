@@ -95,7 +95,16 @@ def get_buffer_via_fzf(command):
 
 
 def get_left(b, c):
-    return b[:c]
+    if c == 0:
+        return ""
+    if b[c - 1] == " ":
+        return b[:c]
+    else:
+        pos = b[:c].rfind(" ")
+        if pos == -1:
+            return ""
+        else:
+            return b[: c + 1]
 
 
 def get_right(b, c):
@@ -110,7 +119,10 @@ def get_buffer_from_items(b, c, items):
     concat_items = get_concat_items(items)
     left = get_left(b, c)
     right = get_right(b, c)
-    return f"{left} {concat_items} {right}"
+    if left == "":
+        return f"{concat_items} {right}"
+    else:
+        return f"{left} {concat_items} {right}"
 
 
 def get_cursor_from_items(b, c, items):
