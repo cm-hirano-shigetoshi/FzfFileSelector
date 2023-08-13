@@ -18,6 +18,14 @@ SERVER_PORT = int(os.environ.get("FZF_FILE_SELECTOR_SERVER_PORT", "6366"))
 search_origins = []
 
 
+def get_abspath(path, home_dir=None):
+    abs_path = os.path.abspath(path)
+    home_dir = home_dir if home_dir else os.environ["HOME"]
+    if abs_path.startswith(home_dir):
+        abs_path = "~" + abs_path[len(home_dir) :]
+    return abs_path
+
+
 def get_parent_dir(d):
     if d.startswith("/"):
         # absolute path
@@ -39,7 +47,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
                 requests.post(
                     f"http://localhost:{FZFZ_PORT}",
-                    data=f"reload({get_fd_command(parent_dir)})+change-prompt({parent_dir}/)",
+                    data=f"reload({get_fd_command(parent_dir)})+change-header({get_abspath(parent_dir)}/)",
                 )
 
                 self.send_response(200)
@@ -70,8 +78,11 @@ def get_fd_command(d):
     return f"{FD} --color always ^ {d}"
 
 
-def get_fzf_options(d):
-    return f"--listen {FZFZ_PORT} --multi --ansi --reverse --prompt '{d}/' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
+def get_fzf_options(d, abs_path=None):
+    if abs_path:
+        # for PyTest. depends on d
+        return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{abs_path}/' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
+    return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{get_abspath(d)}/' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
 
 
 def get_fzf_command(d):

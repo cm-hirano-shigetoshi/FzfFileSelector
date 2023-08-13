@@ -1,6 +1,13 @@
 import fzf_file_selector
 
 
+def test_get_abspath():
+    path = "/Users/sample.user/aaa"
+    expected = "~/aaa"
+    response = fzf_file_selector.get_abspath(path, home_dir="/Users/sample.user")
+    assert response == expected
+
+
 def test_get_parent_dir_01():
     d = "."
     expected = ".."
@@ -24,8 +31,9 @@ def test_get_fd_command():
 
 def test_get_fzf_options():
     d = "."
-    expected = "--listen 6266 --multi --ansi --reverse --prompt './' --bind 'alt-u:execute-silent(curl \"http://localhost:6366?origin_move=up\")'"
-    response = fzf_file_selector.get_fzf_options(d)
+    abs_path = "/ABSOLUTE"
+    expected = "--listen 6266 --multi --ansi --reverse --header '/ABSOLUTE/' --bind 'alt-u:execute-silent(curl \"http://localhost:6366?origin_move=up\")'"
+    response = fzf_file_selector.get_fzf_options(d, abs_path=abs_path)
     assert response == expected
 
 
