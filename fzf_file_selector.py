@@ -74,19 +74,31 @@ def start_server():
     server.start()
 
 
+def get_origin_path_query(b, c):
+    left = get_left(b, c)
+    path = b[len(left) : c]
+    if (pos := path.rfind("/")) == -1:
+        origin_path = "."
+        query = path
+    else:
+        origin_path = path[:pos]
+        query = path[pos + 1 :]
+    return origin_path, query
+
+
 def get_fd_command(d):
     return f"{FD} --color always ^ {d}"
 
 
-def get_fzf_options(d, abs_path=None):
+def get_fzf_options(d, query, abs_path=None):
     if abs_path:
         # for PyTest. depends on d
-        return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{abs_path}/' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
-    return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{get_abspath(d)}/' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
+        return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{abs_path}/' --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
+    return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{get_abspath(d)}/' --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
 
 
-def get_fzf_command(d):
-    return f"{FZF} {get_fzf_options(d)}"
+def get_fzf_command(d, query):
+    return f"{FZF} {get_fzf_options(d, query)}"
 
 
 def get_buffer_via_fzf(command):
@@ -104,7 +116,7 @@ def get_left(b, c):
         if pos == -1:
             return ""
         else:
-            return b[: c + 1]
+            return b[: pos + 1]
 
 
 def get_right(b, c):
@@ -122,15 +134,24 @@ def get_buffer_from_items(b, c, items):
     if left == "":
         return f"{concat_items} {right}"
     else:
-        return f"{left} {concat_items} {right}"
+        if left[-1] == " ":
+            return f"{left}{concat_items} {right}"
+        else:
+            return f"{left} {concat_items} {right}"
 
 
 def get_cursor_from_items(b, c, items):
-    return len(get_left(b, c)) + 1 + len(get_concat_items(items)) + 1
+    if (left := get_left(b, c)) == "":
+        return len(get_concat_items(items)) + 1
+    elif left[-1] == " ":
+        return len(left) + len(get_concat_items(items)) + 1
+    else:
+        return len(left) + 1 + len(get_concat_items(items)) + 1
 
 
 def get_buffer_cursor(d, b, c):
-    command = f"{get_fd_command(d)} | {get_fzf_command(d)}"
+    origin_path, query = get_origin_path_query(b, c)
+    command = f"{get_fd_command(origin_path)} | {get_fzf_command(origin_path, query)}"
     items = get_buffer_via_fzf(command)
     return get_buffer_from_items(b, c, items), get_cursor_from_items(b, c, items)
 
