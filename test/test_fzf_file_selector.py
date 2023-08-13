@@ -22,11 +22,10 @@ def test_get_fd_command():
     assert response == expected
 
 
-def test_get_fzf_command():
-    server_port = 6366
-    fzf_port = 6266
-    expected = f"fzf --listen {fzf_port} --multi --bind 'alt-u:execute-silent(curl \"http://localhost:{server_port}?origin_move=up\")'"
-    response = fzf_file_selector.get_fzf_command()
+def test_get_fzf_options():
+    d = "."
+    expected = "--listen 6266 --multi --reverse --prompt './' --bind 'alt-u:execute-silent(curl \"http://localhost:6366?origin_move=up\")'"
+    response = fzf_file_selector.get_fzf_options(d)
     assert response == expected
 
 

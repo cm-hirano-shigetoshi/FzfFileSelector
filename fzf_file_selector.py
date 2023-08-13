@@ -39,7 +39,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
                 requests.post(
                     f"http://localhost:{FZFZ_PORT}",
-                    data=f"reload({get_fd_command(parent_dir)})",
+                    data=f"reload({get_fd_command(parent_dir)})+change-prompt({parent_dir}/)",
                 )
 
                 self.send_response(200)
@@ -70,8 +70,12 @@ def get_fd_command(d):
     return f"{FD} ^ {d}"
 
 
-def get_fzf_command():
-    return f"{FZF} --listen {FZFZ_PORT} --multi --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
+def get_fzf_options(d):
+    return f"--listen {FZFZ_PORT} --multi --reverse --prompt '{d}/' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
+
+
+def get_fzf_command(d):
+    return f"{FZF} {get_fzf_options(d)}"
 
 
 def get_buffer_via_fzf(command):
@@ -103,7 +107,7 @@ def get_cursor_from_items(b, c, items):
 
 
 def get_buffer_cursor(d, b, c):
-    command = f"{get_fd_command(d)} | {get_fzf_command()}"
+    command = f"{get_fd_command(d)} | {get_fzf_command(d)}"
     items = get_buffer_via_fzf(command)
     return get_buffer_from_items(b, c, items), get_cursor_from_items(b, c, items)
 
