@@ -67,11 +67,11 @@ def start_server():
 
 
 def get_fd_command(d):
-    return f"{FD} ^ {d}"
+    return f"{FD} --color always ^ {d}"
 
 
 def get_fzf_options(d):
-    return f"--listen {FZFZ_PORT} --multi --reverse --prompt '{d}/' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
+    return f"--listen {FZFZ_PORT} --multi --ansi --reverse --prompt '{d}/' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
 
 
 def get_fzf_command(d):

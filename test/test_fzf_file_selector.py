@@ -17,14 +17,14 @@ def test_get_parent_dir_02():
 
 def test_get_fd_command():
     d = "."
-    expected = "fd ^ ."
+    expected = "fd --color always ^ ."
     response = fzf_file_selector.get_fd_command(d)
     assert response == expected
 
 
 def test_get_fzf_options():
     d = "."
-    expected = "--listen 6266 --multi --reverse --prompt './' --bind 'alt-u:execute-silent(curl \"http://localhost:6366?origin_move=up\")'"
+    expected = "--listen 6266 --multi --ansi --reverse --prompt './' --bind 'alt-u:execute-silent(curl \"http://localhost:6366?origin_move=up\")'"
     response = fzf_file_selector.get_fzf_options(d)
     assert response == expected
 
