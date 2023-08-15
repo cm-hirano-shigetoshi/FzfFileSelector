@@ -164,25 +164,32 @@ def get_buffer_cursor(d, b, c):
     return get_buffer_from_items(b, c, items), get_cursor_from_items(b, c, items)
 
 
+def get_fzf_api_url():
+    return f"http://localhost:{FZFZ_PORT}"
+
+
+def get_origin_move_command(d):
+    return f"reload({get_fd_command(d)})+change-header({get_abspath(d)}/)"
+
+
+def get_type_command(type_):
+    return f"reload({get_fd_command(search_origins[-1], type_=type_)})"
+
+
 def request_to_fzf(params):
     try:
         if "origin_move" in params:
-            if params["origin_move"][0] == "up":
-                parent_dir = get_parent_dir(search_origins[-1])
-                search_origins.append(parent_dir)
-
-                requests.post(
-                    f"http://localhost:{FZFZ_PORT}",
-                    data=f"reload({get_fd_command(parent_dir)})+change-header({get_abspath(parent_dir)}/)",
-                )
-                return True
+            move = params["origin_move"][0]
+            if move == "up":
+                search_origins.append(get_parent_dir(search_origins[-1]))
+            command = get_origin_move_command(search_origins[-1])
+            requests.post(get_fzf_api_url(), data=command)
+            return True
         elif "type" in params:
             type_ = params["type"][0]
-            requests.post(
-                f"http://localhost:{FZFZ_PORT}",
-                data=f"reload({get_fd_command(search_origins[-1], type_=type_)})",
-            )
-            return True
+            command = get_type_command(type_)
+            requests.post(get_fzf_api_url(), data=command)
+        return True
     except Exception as e:
         print(e, file=sys.stderr)
         return False
@@ -192,7 +199,6 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed_path = urllib.parse.urlparse(self.path)
         params = urllib.parse.parse_qs(parsed_path.query)
-
         succeeded = request_to_fzf(params)
         if succeeded:
             self.send_response(200)
