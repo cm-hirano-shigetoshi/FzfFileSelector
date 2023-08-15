@@ -32,17 +32,27 @@ def test_get_fd_command():
 
 
 @pytest.mark.parametrize(
-    "d,query,expected",
+    "key,value,expected",
     [
         (
-            ".",
-            "aaa",
-            "--listen 6266 --multi --ansi --query 'aaa' --bind 'alt-u:execute-silent(curl \"http://localhost:6366?origin_move=up\")' --bind 'alt-d:reload(fd --type d --color always ^ .)' --bind 'alt-f:reload(fd --type f --color always ^ .)' --bind 'alt-a:reload(fd --color always ^ .)'",
+            "key",
+            None,
+            "--key",
+        ),
+        (
+            "key",
+            123,
+            "--key '123'",
+        ),
+        (
+            "key",
+            ["abc", "def"],
+            "--key 'abc' --key 'def'",
         ),
     ],
 )
-def test_get_fzf_options_core(d, query, expected):
-    response = fzf_file_selector.get_fzf_options_core(d, query)
+def test_option_to_shell_string(key, value, expected):
+    response = fzf_file_selector.option_to_shell_string(key, value)
     assert response == expected
 
 

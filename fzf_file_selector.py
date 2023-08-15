@@ -93,8 +93,38 @@ def get_fd_command(d, type_="f"):
         return f"{FD} --type {type_} --color always ^ {d}"
 
 
+def option_to_shell_string(key, value):
+    if value is None:
+        return f"--{key}"
+    elif isinstance(value, list):
+        strs = []
+        for v in value:
+            assert "'" not in str(v), f"Invalid option was specified: {v}"
+            strs.append(f"--{key} '{v}'")
+        return " ".join(strs)
+    else:
+        assert "'" not in str(value), f"Invalid option was specified: {value}"
+        return f"--{key} '{value}'"
+
+
+def options_to_shell_string(options):
+    return [option_to_shell_string(k, v) for k, v in options.items()]
+
+
 def get_fzf_options_core(d, query):
-    return f"--listen {FZFZ_PORT} --multi --ansi --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")' --bind 'alt-d:reload({get_fd_command(d, type_='d')})' --bind 'alt-f:reload({get_fd_command(d)})' --bind 'alt-a:reload({get_fd_command(d, type_='A')})'"
+    options = {
+        "listen": FZFZ_PORT,
+        "multi": None,
+        "ansi": None,
+        "query": query,
+        "bind": [
+            f'alt-u:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=up")',
+            f'alt-d:reload({get_fd_command(d, type_="d")})',
+            f'alt-f:reload({get_fd_command(d, type_="f")})',
+            f'alt-a:reload({get_fd_command(d, type_="A")})',
+        ],
+    }
+    return " ".join(options_to_shell_string(options))
 
 
 def get_fzf_options_view(abspath):
