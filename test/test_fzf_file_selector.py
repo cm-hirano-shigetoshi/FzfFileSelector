@@ -40,7 +40,7 @@ def test_get_origin_path_query_02():
 
 def test_get_fd_command():
     d = "."
-    expected = "fd --color always ^ ."
+    expected = "fd --type f --color always ^ ."
     response = fzf_file_selector.get_fd_command(d)
     assert response == expected
 
@@ -49,7 +49,7 @@ def test_get_fzf_options():
     d = "."
     query = "aaa"
     abs_path = "/ABSOLUTE"
-    expected = "--listen 6266 --multi --ansi --reverse --header '/ABSOLUTE/' --query 'aaa' --bind 'alt-u:execute-silent(curl \"http://localhost:6366?origin_move=up\")'"
+    expected = "--listen 6266 --multi --ansi --reverse --header '/ABSOLUTE/' --query 'aaa' --bind 'alt-u:execute-silent(curl \"http://localhost:6366?origin_move=up\")' --bind 'alt-d:reload(fd --type d --color always ^ .)' --bind 'alt-f:reload(fd --type f --color always ^ .)' --bind 'alt-a:reload(fd --color always ^ .)'"
     response = fzf_file_selector.get_fzf_options(d, query, abs_path=abs_path)
     assert response == expected
 

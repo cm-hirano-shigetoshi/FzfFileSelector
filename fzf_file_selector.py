@@ -86,15 +86,18 @@ def get_origin_path_query(b, c):
     return origin_path, query
 
 
-def get_fd_command(d):
-    return f"{FD} --color always ^ {d}"
+def get_fd_command(d, type_="f"):
+    if type_ == "A":
+        return f"{FD} --color always ^ {d}"
+    else:
+        return f"{FD} --type {type_} --color always ^ {d}"
 
 
 def get_fzf_options(d, query, abs_path=None):
     if abs_path:
         # for PyTest. depends on d
-        return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{abs_path}/' --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
-    return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{get_abspath(d)}/' --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")'"
+        return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{abs_path}/' --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")' --bind 'alt-d:reload({get_fd_command(d, type_='d')})' --bind 'alt-f:reload({get_fd_command(d)})' --bind 'alt-a:reload({get_fd_command(d, type_='A')})'"
+    return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{get_abspath(d)}/' --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")' --bind 'alt-d:reload({get_fd_command(d, type_='d')})' --bind 'alt-f:reload({get_fd_command(d)})' --bind 'alt-a:reload({get_fd_command(d, type_='A')})'"
 
 
 def get_fzf_command(d, query):
@@ -153,6 +156,8 @@ def get_buffer_cursor(d, b, c):
     origin_path, query = get_origin_path_query(b, c)
     command = f"{get_fd_command(origin_path)} | {get_fzf_command(origin_path, query)}"
     items = get_buffer_via_fzf(command)
+    if len(items) == 0:
+        return None, None
     return get_buffer_from_items(b, c, items), get_cursor_from_items(b, c, items)
 
 
@@ -162,7 +167,8 @@ def main(args):
     search_origins.append(origin_path)
     start_server()
     buffer, cursor = get_buffer_cursor(origin_path, org_buffer, org_cursor)
-    print(f"{cursor} {buffer}")
+    if cursor:
+        print(f"{cursor} {buffer}")
 
 
 if __name__ == "__main__":
