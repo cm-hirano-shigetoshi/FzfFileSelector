@@ -164,11 +164,8 @@ def get_buffer_cursor(d, b, c):
     return get_buffer_from_items(b, c, items), get_cursor_from_items(b, c, items)
 
 
-class RequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        parsed_path = urllib.parse.urlparse(self.path)
-        params = urllib.parse.parse_qs(parsed_path.query)
-
+def request_to_fzf(params):
+    try:
         if "origin_move" in params:
             if params["origin_move"][0] == "up":
                 parent_dir = get_parent_dir(search_origins[-1])
@@ -178,16 +175,26 @@ class RequestHandler(BaseHTTPRequestHandler):
                     f"http://localhost:{FZFZ_PORT}",
                     data=f"reload({get_fd_command(parent_dir)})+change-header({get_abspath(parent_dir)}/)",
                 )
-
-                self.send_response(200)
-                self.end_headers()
+                return True
         elif "type" in params:
             type_ = params["type"][0]
             requests.post(
                 f"http://localhost:{FZFZ_PORT}",
                 data=f"reload({get_fd_command(search_origins[-1], type_=type_)})",
             )
+            return True
+    except Exception as e:
+        print(e, file=sys.stderr)
+        return False
 
+
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        parsed_path = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed_path.query)
+
+        succeeded = request_to_fzf(params)
+        if succeeded:
             self.send_response(200)
             self.end_headers()
 
