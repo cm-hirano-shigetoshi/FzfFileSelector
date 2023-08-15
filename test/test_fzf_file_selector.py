@@ -1,4 +1,5 @@
 import fzf_file_selector
+import pytest
 
 
 def test_get_abspath():
@@ -8,32 +9,17 @@ def test_get_abspath():
     assert response == expected
 
 
-def test_get_parent_dir_01():
-    d = "."
-    expected = ".."
+@pytest.mark.parametrize("d,expected", [(".", ".."), ("/Users", "/")])
+def test_get_parent_dir(d, expected):
     response = fzf_file_selector.get_parent_dir(d)
     assert response == expected
 
 
-def test_get_parent_dir_02():
-    d = "/Users"
-    expected = "/"
-    response = fzf_file_selector.get_parent_dir(d)
-    assert response == expected
-
-
-def test_get_origin_path_query_01():
-    b = "aaa/bbbccc"
-    c = 7
-    expected = ("aaa", "bbb")
-    response = fzf_file_selector.get_origin_path_query(b, c)
-    assert response == expected
-
-
-def test_get_origin_path_query_02():
-    b = "ls aaa/bbbccc"
-    c = 10
-    expected = ("aaa", "bbb")
+@pytest.mark.parametrize(
+    "b,c,expected",
+    [("aaa/bbbccc", 7, ("aaa", "bbb")), ("ls aaa/bbbccc", 10, ("aaa", "bbb"))],
+)
+def test_get_origin_path_query(b, c, expected):
     response = fzf_file_selector.get_origin_path_query(b, c)
     assert response == expected
 
@@ -54,101 +40,53 @@ def test_get_fzf_options():
     assert response == expected
 
 
-def test_get_left_01():
-    b = "aaabbb"
-    c = 3
-    expected = ""
+@pytest.mark.parametrize(
+    "b,c,expected",
+    [
+        ("aaabbb", 3, ""),
+        ("aaa bbb", 3, ""),
+        ("aaa bbb", 4, "aaa "),
+        ("aaa/bbbccc", 7, ""),
+    ],
+)
+def test_get_left(b, c, expected):
     response = fzf_file_selector.get_left(b, c)
     assert response == expected
 
 
-def test_get_left_02():
-    b = "aaa bbb"
-    c = 3
-    expected = ""
-    response = fzf_file_selector.get_left(b, c)
-    assert response == expected
-
-
-def test_get_left_03():
-    b = "aaa bbb"
-    c = 4
-    expected = "aaa "
-    response = fzf_file_selector.get_left(b, c)
-    assert response == expected
-
-
-def test_get_left_04():
-    b = "aaa/bbbccc"
-    c = 7
-    expected = ""
-    response = fzf_file_selector.get_left(b, c)
-    assert response == expected
-
-
-def test_get_right_01():
-    b = "aaabbb"
-    c = 3
-    expected = "bbb"
+@pytest.mark.parametrize(
+    "b,c,expected",
+    [
+        ("aaabbb", 3, "bbb"),
+        ("aaa bbb", 3, " bbb"),
+        ("aaa bbb", 4, "bbb"),
+        ("aaa/bbbccc", 7, "ccc"),
+    ],
+)
+def test_get_right(b, c, expected):
     response = fzf_file_selector.get_right(b, c)
     assert response == expected
 
 
-def test_get_right_02():
-    b = "aaa bbb"
-    c = 3
-    expected = " bbb"
-    response = fzf_file_selector.get_right(b, c)
-    assert response == expected
-
-
-def test_get_right_03():
-    b = "aaa bbb"
-    c = 4
-    expected = "bbb"
-    response = fzf_file_selector.get_right(b, c)
-    assert response == expected
-
-
-def test_get_right_04():
-    b = "aaa/bbbccc"
-    c = 7
-    expected = "ccc"
-    response = fzf_file_selector.get_right(b, c)
-    assert response == expected
-
-
-def test_get_buffer_from_items_01():
-    b = "aaabbb"
-    c = 3
-    items = "select1\nselect2\n"
-    expected = "select1 select2 bbb"
+@pytest.mark.parametrize(
+    "b,c,items,expected",
+    [
+        ("aaabbb", 3, "select1\nselect2\n", "select1 select2 bbb"),
+        ("ls test/abbb", 9, "select1\nselect2\n", "ls select1 select2 bbb"),
+    ],
+)
+def test_get_buffer_from_items(b, c, items, expected):
     response = fzf_file_selector.get_buffer_from_items(b, c, items)
     assert response == expected
 
 
-def test_get_buffer_from_items_02():
-    b = "ls test/abbb"
-    c = 9
-    items = "select1\nselect2\n"
-    expected = "ls select1 select2 bbb"
-    response = fzf_file_selector.get_buffer_from_items(b, c, items)
-    assert response == expected
-
-
-def test_get_cursor_from_items_01():
-    b = "aaabbb"
-    c = 3
-    items = "select1\nselect2\n"
-    expected = 16
-    response = fzf_file_selector.get_cursor_from_items(b, c, items)
-    assert response == expected
-
-
-def test_get_cursor_from_items_02():
-    b = "ls test/abbb"
-    c = 9
-    items = "select1\nselect2\n"
-    expected = 19
+@pytest.mark.parametrize(
+    "b,c,items,expected",
+    [
+        ("aaabbb", 3, "select1\nselect2\n", 16),
+        ("ls test/abbb", 9, "select1\nselect2\n", 19),
+    ],
+)
+def test_get_cursor_from_items(b, c, items, expected):
     response = fzf_file_selector.get_cursor_from_items(b, c, items)
     assert response == expected
