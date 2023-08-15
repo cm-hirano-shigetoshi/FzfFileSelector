@@ -52,7 +52,15 @@ class RequestHandler(BaseHTTPRequestHandler):
 
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write(parent_dir.encode())
+        elif "type" in params:
+            type_ = params["type"][0]
+            requests.post(
+                f"http://localhost:{FZFZ_PORT}",
+                data=f"reload({get_fd_command(search_origins[-1], type_=type_)})",
+            )
+
+            self.send_response(200)
+            self.end_headers()
 
     def log_message(self, format, *args):
         # supress any log messages
@@ -119,9 +127,9 @@ def get_fzf_options_core(d, query):
         "query": query,
         "bind": [
             f'alt-u:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=up")',
-            f'alt-d:reload({get_fd_command(d, type_="d")})',
-            f'alt-f:reload({get_fd_command(d, type_="f")})',
-            f'alt-a:reload({get_fd_command(d, type_="A")})',
+            f'alt-d:execute-silent(curl "http://localhost:{SERVER_PORT}?type=d")',
+            f'alt-f:execute-silent(curl "http://localhost:{SERVER_PORT}?type=f")',
+            f'alt-a:execute-silent(curl "http://localhost:{SERVER_PORT}?type=A")',
         ],
     }
     return " ".join(options_to_shell_string(options))
