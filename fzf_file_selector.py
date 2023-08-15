@@ -35,47 +35,6 @@ def get_parent_dir(d):
         return os.path.relpath(f"{d}/..")
 
 
-class RequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        parsed_path = urllib.parse.urlparse(self.path)
-        params = urllib.parse.parse_qs(parsed_path.query)
-
-        if "origin_move" in params:
-            if params["origin_move"][0] == "up":
-                parent_dir = get_parent_dir(search_origins[-1])
-                search_origins.append(parent_dir)
-
-                requests.post(
-                    f"http://localhost:{FZFZ_PORT}",
-                    data=f"reload({get_fd_command(parent_dir)})+change-header({get_abspath(parent_dir)}/)",
-                )
-
-                self.send_response(200)
-                self.end_headers()
-        elif "type" in params:
-            type_ = params["type"][0]
-            requests.post(
-                f"http://localhost:{FZFZ_PORT}",
-                data=f"reload({get_fd_command(search_origins[-1], type_=type_)})",
-            )
-
-            self.send_response(200)
-            self.end_headers()
-
-    def log_message(self, format, *args):
-        # supress any log messages
-        return
-
-
-class ThreadedHTTPServer(threading.Thread):
-    def run(self):
-        self.httpd = HTTPServer(("", SERVER_PORT), RequestHandler)
-        self.httpd.serve_forever()
-
-    def stop(self):
-        self.httpd.shutdown()
-
-
 def start_server():
     server = ThreadedHTTPServer(daemon=True)
     atexit.register(server.stop)
@@ -203,6 +162,47 @@ def get_buffer_cursor(d, b, c):
     if len(items) == 0:
         return None, None
     return get_buffer_from_items(b, c, items), get_cursor_from_items(b, c, items)
+
+
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        parsed_path = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed_path.query)
+
+        if "origin_move" in params:
+            if params["origin_move"][0] == "up":
+                parent_dir = get_parent_dir(search_origins[-1])
+                search_origins.append(parent_dir)
+
+                requests.post(
+                    f"http://localhost:{FZFZ_PORT}",
+                    data=f"reload({get_fd_command(parent_dir)})+change-header({get_abspath(parent_dir)}/)",
+                )
+
+                self.send_response(200)
+                self.end_headers()
+        elif "type" in params:
+            type_ = params["type"][0]
+            requests.post(
+                f"http://localhost:{FZFZ_PORT}",
+                data=f"reload({get_fd_command(search_origins[-1], type_=type_)})",
+            )
+
+            self.send_response(200)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        # supress any log messages
+        return
+
+
+class ThreadedHTTPServer(threading.Thread):
+    def run(self):
+        self.httpd = HTTPServer(("", SERVER_PORT), RequestHandler)
+        self.httpd.serve_forever()
+
+    def stop(self):
+        self.httpd.shutdown()
 
 
 def main(args):
