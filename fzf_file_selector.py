@@ -93,11 +93,17 @@ def get_fd_command(d, type_="f"):
         return f"{FD} --type {type_} --color always ^ {d}"
 
 
-def get_fzf_options(d, query, abs_path=None):
-    if abs_path:
-        # for PyTest. depends on d
-        return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{abs_path}/' --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")' --bind 'alt-d:reload({get_fd_command(d, type_='d')})' --bind 'alt-f:reload({get_fd_command(d)})' --bind 'alt-a:reload({get_fd_command(d, type_='A')})'"
-    return f"--listen {FZFZ_PORT} --multi --ansi --reverse --header '{get_abspath(d)}/' --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")' --bind 'alt-d:reload({get_fd_command(d, type_='d')})' --bind 'alt-f:reload({get_fd_command(d)})' --bind 'alt-a:reload({get_fd_command(d, type_='A')})'"
+def get_fzf_options_core(d, query):
+    return f"--listen {FZFZ_PORT} --multi --ansi --query '{query}' --bind 'alt-u:execute-silent(curl \"http://localhost:{SERVER_PORT}?origin_move=up\")' --bind 'alt-d:reload({get_fd_command(d, type_='d')})' --bind 'alt-f:reload({get_fd_command(d)})' --bind 'alt-a:reload({get_fd_command(d, type_='A')})'"
+
+
+def get_fzf_options_view(abspath):
+    return f"--reverse --header '{abspath}/'"
+
+
+def get_fzf_options(d, query):
+    abspath = get_abspath(d)
+    return f"{get_fzf_options_core(d, query)} {get_fzf_options_view(abspath)}"
 
 
 def get_fzf_command(d, query):
