@@ -3,6 +3,8 @@ PYTHON="${FZF_FILE_SELECTOR_PYTHON:-python}"
 
 function _fzf_file_selector() {
     read cursor buffer <<< $("${PYTHON}" "${FZF_FILE_SELECTOR_DIR}/fzf_file_selector.py" "${BUFFER}" "${CURSOR}")
-    BUFFER="${buffer}"
-    CURSOR="${cursor}"
+    if [[ "$cursor" != "" ]] then
+        BUFFER="${buffer}"
+        CURSOR="${cursor}"
+    fi
 }
