@@ -18,12 +18,13 @@ SERVER_PORT = int(os.environ.get("FZF_FILE_SELECTOR_SERVER_PORT", "6366"))
 search_origins = []
 
 
-def get_abspath(path, home_dir=None):
-    abs_path = os.path.abspath(path)
-    home_dir = home_dir if home_dir else os.environ["HOME"]
-    if abs_path.startswith(home_dir):
-        abs_path = "~" + abs_path[len(home_dir) :]
-    return abs_path
+def get_absdir_view(path, home_dir=os.environ["HOME"]):
+    abs_dir = os.path.abspath(path)
+    if abs_dir.startswith(home_dir):
+        abs_dir = "~" + abs_dir[len(home_dir) :]
+    if abs_dir != "/":
+        abs_dir += "/"
+    return abs_dir
 
 
 def get_parent_dir(d):
@@ -95,13 +96,13 @@ def get_fzf_options_core(d, query):
     return " ".join(options_to_shell_string(options))
 
 
-def get_fzf_options_view(abspath):
-    return f"--reverse --header '{abspath}/'"
+def get_fzf_options_view(abs_dir):
+    return f"--reverse --header '{abs_dir}'"
 
 
 def get_fzf_options(d, query):
-    abspath = get_abspath(d)
-    return f"{get_fzf_options_core(d, query)} {get_fzf_options_view(abspath)}"
+    abs_dir = get_absdir_view(d)
+    return f"{get_fzf_options_core(d, query)} {get_fzf_options_view(abs_dir)}"
 
 
 def get_fzf_command(d, query):
@@ -182,7 +183,7 @@ def update_search_origins(move):
 
 
 def get_origin_move_command(d):
-    return f"reload({get_fd_command(d)})+change-header({get_abspath(d)}/)"
+    return f"reload({get_fd_command(d)})+change-header({get_absdir_view(d)})"
 
 
 def get_type_command(type_):

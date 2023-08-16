@@ -2,10 +2,12 @@ import fzf_file_selector
 import pytest
 
 
-def test_get_abspath():
-    path = "/Users/sample.user/aaa"
-    expected = "~/aaa"
-    response = fzf_file_selector.get_abspath(path, home_dir="/Users/sample.user")
+@pytest.mark.parametrize(
+    "d,expected",
+    [("/Users/sample.user/aaa", "~/aaa/"), ("/absolute/path", "/absolute/path/")],
+)
+def test_get_absdir_view(d, expected):
+    response = fzf_file_selector.get_absdir_view(d, home_dir="/Users/sample.user")
     assert response == expected
 
 
@@ -57,16 +59,20 @@ def test_option_to_shell_string(key, value, expected):
 
 
 @pytest.mark.parametrize(
-    "abspath,expected",
+    "abs_dir,expected",
     [
         (
-            "/absolute/path",
+            "/absolute/path/",
             "--reverse --header '/absolute/path/'",
+        ),
+        (
+            "/",
+            "--reverse --header '/'",
         ),
     ],
 )
-def test_get_fzf_options_view(abspath, expected):
-    response = fzf_file_selector.get_fzf_options_view(abspath)
+def test_get_fzf_options_view(abs_dir, expected):
+    response = fzf_file_selector.get_fzf_options_view(abs_dir)
     assert response == expected
 
 
