@@ -86,6 +86,7 @@ def get_fzf_options_core(d, query):
         "query": query,
         "bind": [
             f'alt-u:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=up")',
+            f'alt-p:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=back")',
             f'alt-d:execute-silent(curl "http://localhost:{SERVER_PORT}?type=d")',
             f'alt-f:execute-silent(curl "http://localhost:{SERVER_PORT}?type=f")',
             f'alt-a:execute-silent(curl "http://localhost:{SERVER_PORT}?type=A")',
@@ -168,6 +169,14 @@ def get_fzf_api_url():
     return f"http://localhost:{FZFZ_PORT}"
 
 
+def update_search_origins(move):
+    if move == "up":
+        search_origins.append(get_parent_dir(search_origins[-1]))
+    elif move == "back":
+        if len(search_origins) > 1:
+            search_origins.pop(-1)
+
+
 def get_origin_move_command(d):
     return f"reload({get_fd_command(d)})+change-header({get_abspath(d)}/)"
 
@@ -180,8 +189,7 @@ def request_to_fzf(params):
     try:
         if "origin_move" in params:
             move = params["origin_move"][0]
-            if move == "up":
-                search_origins.append(get_parent_dir(search_origins[-1]))
+            update_search_origins(move)
             command = get_origin_move_command(search_origins[-1])
             requests.post(get_fzf_api_url(), data=command)
             return True
