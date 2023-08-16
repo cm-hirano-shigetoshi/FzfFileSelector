@@ -3,11 +3,14 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "d,expected",
-    [("/Users/sample.user/aaa", "~/aaa/"), ("/absolute/path", "/absolute/path/")],
+    "d,home,expected",
+    [
+        ("/Users/sample.user/aaa", "/Users/sample.user", "~/aaa/"),
+        ("/absolute/path", "/Users/sample.user", "/absolute/path/"),
+    ],
 )
-def test_get_absdir_view(d, expected):
-    response = fzf_file_selector.get_absdir_view(d, home_dir="/Users/sample.user")
+def test_get_absdir_view(d, home, expected):
+    response = fzf_file_selector.get_absdir_view(d, home_dir=home)
     assert response == expected
 
 
@@ -26,10 +29,17 @@ def test_get_origin_path_query(b, c, expected):
     assert response == expected
 
 
-def test_get_fd_command():
-    d = "."
-    expected = "fd --type f --color always ^ ."
-    response = fzf_file_selector.get_fd_command(d)
+@pytest.mark.parametrize(
+    "d,path_type,type_,expected",
+    [
+        (".", "relative", "f", "fd --type f --color always ^ ."),
+        (".", "absolute", "f", "fd --absolute-path --type f --color always ^ ."),
+        (".", "absolute", "A", "fd --absolute-path --color always ^ ."),
+        (".", "relative", "A", "fd --color always ^ ."),
+    ],
+)
+def test_get_fd_command(d, path_type, type_, expected):
+    response = fzf_file_selector.get_fd_command(d, path_type, type_)
     assert response == expected
 
 

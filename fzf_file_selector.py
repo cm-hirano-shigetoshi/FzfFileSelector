@@ -54,11 +54,30 @@ def get_origin_path_query(b, c):
     return origin_path, query
 
 
-def get_fd_command(d, type_="f"):
+def get_path_type_option(path_type):
+    if path_type == "relative":
+        return ""
+    elif path_type == "absolute":
+        return "--absolute-path"
+
+
+def get_type_option(type_):
     if type_ == "A":
-        return f"{FD} --color always ^ {d}"
+        return ""
     else:
-        return f"{FD} --type {type_} --color always ^ {d}"
+        return f"--type {type_}"
+
+
+def get_fd_command(d, path_type="relative", type_="f"):
+    commands = []
+    commands.append(FD)
+    commands.append(get_path_type_option(path_type))
+    commands.append(get_type_option(type_))
+    commands.append("--color always")
+    commands.append("^")
+    commands.append(d)
+
+    return " ".join([x for x in commands if len(x) > 0])
 
 
 def option_to_shell_string(key, value):
@@ -88,9 +107,11 @@ def get_fzf_options_core(d, query):
         "bind": [
             f'alt-u:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=up")',
             f'alt-p:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=back")',
+            f'alt-a:execute-silent(curl "http://localhost:{SERVER_PORT}?path_type=absolute")',
+            f'alt-r:execute-silent(curl "http://localhost:{SERVER_PORT}?path_type=relative")',
             f'alt-d:execute-silent(curl "http://localhost:{SERVER_PORT}?type=d")',
             f'alt-f:execute-silent(curl "http://localhost:{SERVER_PORT}?type=f")',
-            f'alt-a:execute-silent(curl "http://localhost:{SERVER_PORT}?type=A")',
+            f'alt-s:execute-silent(curl "http://localhost:{SERVER_PORT}?type=A")',
         ],
     }
     return " ".join(options_to_shell_string(options))
@@ -186,6 +207,10 @@ def get_origin_move_command(d):
     return f"reload({get_fd_command(d)})+change-header({get_absdir_view(d)})"
 
 
+def get_path_type_command(path_type):
+    return f"reload({get_fd_command(search_origins[-1], path_type=path_type)})"
+
+
 def get_type_command(type_):
     return f"reload({get_fd_command(search_origins[-1], type_=type_)})"
 
@@ -199,6 +224,10 @@ def request_to_fzf(params):
                 command = get_origin_move_command(search_origins[-1])
                 requests.post(get_fzf_api_url(), data=command)
                 return True
+        elif "path_type" in params:
+            path_type = params["path_type"][0]
+            command = get_path_type_command(path_type)
+            requests.post(get_fzf_api_url(), data=command)
         elif "type" in params:
             type_ = params["type"][0]
             command = get_type_command(type_)
