@@ -16,6 +16,8 @@ FZFZ_PORT = int(os.environ.get("FZF_FILE_SELECTOR_FZFZ_PORT", "6266"))
 SERVER_PORT = int(os.environ.get("FZF_FILE_SELECTOR_SERVER_PORT", "6366"))
 
 search_origins = []
+path_notation_ = ""
+entity_type_ = ""
 
 
 def get_absdir_view(path, home_dir=os.environ["HOME"]):
@@ -54,25 +56,31 @@ def get_origin_path_query(b, c):
     return origin_path, query
 
 
-def get_path_type_option(path_type):
-    if path_type == "relative":
+def get_path_notation_option(path_notation):
+    assert path_notation in ("relative", "absolute"), path_notation
+    if path_notation == "relative":
         return ""
-    elif path_type == "absolute":
+    elif path_notation == "absolute":
         return "--absolute-path"
 
 
-def get_type_option(type_):
-    if type_ == "A":
+def get_entity_type_option(entity_type):
+    assert entity_type in ("A", "f", "d")
+    if entity_type == "A":
         return ""
     else:
-        return f"--type {type_}"
+        return f"--type {entity_type}"
 
 
-def get_fd_command(d, path_type="relative", type_="f"):
+# def get_fd_command(d, path_notation="relative", type_="f"):
+def get_fd_command(d, path_notation=None, entity_type=None):
+    path_notation = path_notation if path_notation else path_notation_
+    entity_type = entity_type if entity_type else entity_type_
+
     commands = []
     commands.append(FD)
-    commands.append(get_path_type_option(path_type))
-    commands.append(get_type_option(type_))
+    commands.append(get_path_notation_option(path_notation))
+    commands.append(get_entity_type_option(entity_type))
     commands.append("--color always")
     commands.append("^")
     commands.append(d)
@@ -107,11 +115,11 @@ def get_fzf_options_core(d, query):
         "bind": [
             f'alt-u:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=up")',
             f'alt-p:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=back")',
-            f'alt-a:execute-silent(curl "http://localhost:{SERVER_PORT}?path_type=absolute")',
-            f'alt-r:execute-silent(curl "http://localhost:{SERVER_PORT}?path_type=relative")',
-            f'alt-d:execute-silent(curl "http://localhost:{SERVER_PORT}?type=d")',
-            f'alt-f:execute-silent(curl "http://localhost:{SERVER_PORT}?type=f")',
-            f'alt-s:execute-silent(curl "http://localhost:{SERVER_PORT}?type=A")',
+            f'alt-a:execute-silent(curl "http://localhost:{SERVER_PORT}?path_notation=absolute")',
+            f'alt-r:execute-silent(curl "http://localhost:{SERVER_PORT}?path_notation=relative")',
+            f'alt-d:execute-silent(curl "http://localhost:{SERVER_PORT}?entity_type=d")',
+            f'alt-f:execute-silent(curl "http://localhost:{SERVER_PORT}?entity_type=f")',
+            f'alt-s:execute-silent(curl "http://localhost:{SERVER_PORT}?entity_type=A")',
         ],
     }
     return " ".join(options_to_shell_string(options))
@@ -203,16 +211,26 @@ def update_search_origins(move):
     return False
 
 
+def update_path_notation(path_notation):
+    global path_notation_
+    path_notation_ = path_notation
+
+
+def update_entity_type(entity_type):
+    global entity_type_
+    entity_type_ = entity_type
+
+
 def get_origin_move_command(d):
     return f"reload({get_fd_command(d)})+change-header({get_absdir_view(d)})"
 
 
-def get_path_type_command(path_type):
-    return f"reload({get_fd_command(search_origins[-1], path_type=path_type)})"
+def get_path_notation_command(path_notation):
+    return f"reload({get_fd_command(search_origins[-1], path_notation=path_notation)})"
 
 
-def get_type_command(type_):
-    return f"reload({get_fd_command(search_origins[-1], type_=type_)})"
+def get_entity_type_command(entity_type):
+    return f"reload({get_fd_command(search_origins[-1], entity_type=entity_type)})"
 
 
 def request_to_fzf(params):
@@ -224,13 +242,15 @@ def request_to_fzf(params):
                 command = get_origin_move_command(search_origins[-1])
                 requests.post(get_fzf_api_url(), data=command)
                 return True
-        elif "path_type" in params:
-            path_type = params["path_type"][0]
-            command = get_path_type_command(path_type)
+        elif "path_notation" in params:
+            path_notation = params["path_notation"][0]
+            update_path_notation(path_notation)
+            command = get_path_notation_command(path_notation)
             requests.post(get_fzf_api_url(), data=command)
-        elif "type" in params:
-            type_ = params["type"][0]
-            command = get_type_command(type_)
+        elif "entity_type" in params:
+            entity_type = params["entity_type"][0]
+            update_entity_type(entity_type)
+            command = get_entity_type_command(entity_type)
             requests.post(get_fzf_api_url(), data=command)
         return True
     except Exception as e:
@@ -262,9 +282,12 @@ class ThreadedHTTPServer(threading.Thread):
 
 
 def main(args):
+    global path_notation_, entity_type_
     org_buffer, org_cursor = args[1], int(args[2])
     origin_path = "."
     search_origins.append(origin_path)
+    path_notation_ = "relative"
+    entity_type_ = "f"
     start_server()
     buffer, cursor = get_buffer_cursor(origin_path, org_buffer, org_cursor)
     if cursor:
