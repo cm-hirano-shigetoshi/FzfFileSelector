@@ -9,7 +9,7 @@ def test_get_abspath():
     assert response == expected
 
 
-@pytest.mark.parametrize("d,expected", [(".", ".."), ("/Users", "/")])
+@pytest.mark.parametrize("d,expected", [(".", ".."), ("/Users", "/"), ("/", "/")])
 def test_get_parent_dir(d, expected):
     response = fzf_file_selector.get_parent_dir(d)
     assert response == expected
