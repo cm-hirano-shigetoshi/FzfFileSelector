@@ -20,6 +20,10 @@ path_notation_ = ""
 entity_type_ = ""
 
 
+def post_to_localhost(*args, **kwargs):
+    requests.post(*args, **kwargs, proxies={"http": None})
+
+
 def get_absdir_view(path, home_dir=os.environ["HOME"]):
     abs_dir = os.path.abspath(path)
     if abs_dir.startswith(home_dir):
@@ -239,18 +243,18 @@ def request_to_fzf(params):
             succeeded = update_search_origins(move)
             if succeeded:
                 command = get_origin_move_command(search_origins[-1])
-                requests.post(get_fzf_api_url(), data=command)
+                post_to_localhost(get_fzf_api_url(), data=command)
                 return True
         elif "path_notation" in params:
             path_notation = params["path_notation"][0]
             update_path_notation(path_notation)
             command = get_path_notation_command(path_notation)
-            requests.post(get_fzf_api_url(), data=command)
+            post_to_localhost(get_fzf_api_url(), data=command)
         elif "entity_type" in params:
             entity_type = params["entity_type"][0]
             update_entity_type(entity_type)
             command = get_entity_type_command(entity_type)
-            requests.post(get_fzf_api_url(), data=command)
+            post_to_localhost(get_fzf_api_url(), data=command)
         return True
     except Exception as e:
         print(e, file=sys.stderr)
