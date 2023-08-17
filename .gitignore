@@ -1,0 +1,5 @@
+FzfFileSelector.zsh.zwc
+._zinit/
+__pycache__/
+test/__pycache__/
+
