@@ -72,7 +72,6 @@ def get_entity_type_option(entity_type):
         return f"--type {entity_type}"
 
 
-# def get_fd_command(d, path_notation="relative", type_="f"):
 def get_fd_command(d, path_notation=None, entity_type=None):
     path_notation = path_notation if path_notation else path_notation_
     entity_type = entity_type if entity_type else entity_type_
@@ -126,7 +125,7 @@ def get_fzf_options_core(d, query):
 
 
 def get_fzf_options_view(abs_dir):
-    return f"--reverse --header '{abs_dir}'"
+    return f"--reverse --header '{abs_dir}' --preview 'bat --color always {{}}' --preview-window down"
 
 
 def get_fzf_options(d, query):
