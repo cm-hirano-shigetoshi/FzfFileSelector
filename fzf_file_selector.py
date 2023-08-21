@@ -141,7 +141,8 @@ def get_fzf_command(d, query):
     return f"{FZF} {get_fzf_options(d, query)}"
 
 
-def get_buffer_via_fzf(command):
+def get_selected_items(origin_path, query):
+    command = f"{get_fd_command(origin_path)} | {get_fzf_command(origin_path, query)}"
     proc = subprocess.run(command, shell=True, stdout=PIPE, text=True)
     return proc.stdout
 
@@ -187,15 +188,6 @@ def get_cursor_from_items(b, c, items):
         return len(left) + len(get_concat_items(items)) + 1
     else:
         return len(left) + 1 + len(get_concat_items(items)) + 1
-
-
-def get_buffer_cursor(d, b, c):
-    origin_path, query = get_origin_path_query(b, c)
-    command = f"{get_fd_command(origin_path)} | {get_fzf_command(origin_path, query)}"
-    items = get_buffer_via_fzf(command)
-    if len(items) == 0:
-        return None, None
-    return get_buffer_from_items(b, c, items), get_cursor_from_items(b, c, items)
 
 
 def get_fzf_api_url():
@@ -287,13 +279,18 @@ class ThreadedHTTPServer(threading.Thread):
 def main(args):
     global path_notation_, entity_type_
     org_buffer, org_cursor = args[1], int(args[2])
-    origin_path = "."
+
+    start_server()
+
+    origin_path, query = get_origin_path_query(org_buffer, org_cursor)
     search_origins.append(origin_path)
     path_notation_ = "relative"
     entity_type_ = "f"
-    start_server()
-    buffer, cursor = get_buffer_cursor(origin_path, org_buffer, org_cursor)
-    if cursor:
+
+    items = get_selected_items(origin_path, query)
+    if len(items) > 0:
+        buffer = get_buffer_from_items(org_buffer, org_cursor, items)
+        cursor = get_cursor_from_items(org_buffer, org_cursor, items)
         print(f"{cursor} {buffer}")
 
 
