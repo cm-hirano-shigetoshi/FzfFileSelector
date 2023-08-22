@@ -134,15 +134,15 @@ def get_fzf_options_view(abs_dir):
 
 def get_fzf_options(d, query):
     abs_dir = get_absdir_view(d)
-    return f"{get_fzf_options_core(d, query)} {get_fzf_options_view(abs_dir)}"
+    return " ".join([get_fzf_options_core(d, query), get_fzf_options_view(abs_dir)])
 
 
-def get_fzf_command(d, query):
-    return f"{FZF} {get_fzf_options(d, query)}"
+def get_fzf_dict(d, query):
+    return {"options": get_fzf_options(d, query)}
 
 
-def get_selected_items(origin_path, query):
-    command = f"{get_fd_command(origin_path)} | {get_fzf_command(origin_path, query)}"
+def get_selected_items(fd_command, fzf_dict):
+    command = f'{fd_command} | {FZF} {fzf_dict["options"]}'
     proc = subprocess.run(command, shell=True, stdout=PIPE, text=True)
     return proc.stdout
 
@@ -287,7 +287,9 @@ def main(args):
     path_notation_ = "relative"
     entity_type_ = "f"
 
-    items = get_selected_items(origin_path, query)
+    fd_command = get_fd_command(origin_path)
+    fzf_dict = get_fzf_dict(origin_path, query)
+    items = get_selected_items(fd_command, fzf_dict)
     if len(items) > 0:
         buffer = get_buffer_from_items(org_buffer, org_cursor, items)
         cursor = get_cursor_from_items(org_buffer, org_cursor, items)
