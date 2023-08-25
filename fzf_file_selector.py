@@ -1,5 +1,6 @@
 import atexit
 import os
+import socket
 import subprocess
 import sys
 import threading
@@ -12,8 +13,7 @@ import requests
 FZF = os.environ.get("FZF_FILE_SELECTOR_FZF", "fzf")
 FD = os.environ.get("FZF_FILE_SELECTOR_FD", "fd")
 
-FZFZ_PORT = int(os.environ.get("FZF_FILE_SELECTOR_FZFZ_PORT", "6266"))
-SERVER_PORT = int(os.environ.get("FZF_FILE_SELECTOR_SERVER_PORT", "6366"))
+fzf_port_ = -1
 
 search_origins = []
 path_notation_ = ""
@@ -45,7 +45,9 @@ def get_parent_dir(d):
 def start_server():
     server = ThreadedHTTPServer(daemon=True)
     atexit.register(server.stop)
+    port = server.bind_socket()
     server.start()
+    return port
 
 
 def get_origin_path_query(b, c):
@@ -109,20 +111,19 @@ def options_to_shell_string(options):
     return [option_to_shell_string(k, v) for k, v in options.items()]
 
 
-def get_fzf_options_core(d, query):
+def get_fzf_options_core(d, query, port):
     options = {
-        "listen": FZFZ_PORT,
         "multi": None,
         "ansi": None,
         "query": query,
         "bind": [
-            f'alt-u:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=up")',
-            f'alt-p:execute-silent(curl "http://localhost:{SERVER_PORT}?origin_move=back")',
-            f'alt-a:execute-silent(curl "http://localhost:{SERVER_PORT}?path_notation=absolute")',
-            f'alt-r:execute-silent(curl "http://localhost:{SERVER_PORT}?path_notation=relative")',
-            f'alt-d:execute-silent(curl "http://localhost:{SERVER_PORT}?entity_type=d")',
-            f'alt-f:execute-silent(curl "http://localhost:{SERVER_PORT}?entity_type=f")',
-            f'alt-s:execute-silent(curl "http://localhost:{SERVER_PORT}?entity_type=A")',
+            f'alt-u:execute-silent(curl "http://localhost:{port}?origin_move=up")',
+            f'alt-p:execute-silent(curl "http://localhost:{port}?origin_move=back")',
+            f'alt-a:execute-silent(curl "http://localhost:{port}?path_notation=absolute")',
+            f'alt-r:execute-silent(curl "http://localhost:{port}?path_notation=relative")',
+            f'alt-d:execute-silent(curl "http://localhost:{port}?entity_type=d")',
+            f'alt-f:execute-silent(curl "http://localhost:{port}?entity_type=f")',
+            f'alt-s:execute-silent(curl "http://localhost:{port}?entity_type=A")',
         ],
     }
     return " ".join(options_to_shell_string(options))
@@ -132,17 +133,27 @@ def get_fzf_options_view(abs_dir):
     return f"--reverse --header '{abs_dir}' --preview 'bat --color always {{}}' --preview-window down"
 
 
-def get_fzf_options(d, query):
+def get_fzf_options(d, query, port):
     abs_dir = get_absdir_view(d)
-    return " ".join([get_fzf_options_core(d, query), get_fzf_options_view(abs_dir)])
+    return " ".join(
+        [get_fzf_options_core(d, query, port), get_fzf_options_view(abs_dir)]
+    )
 
 
-def get_fzf_dict(d, query):
-    return {"options": get_fzf_options(d, query)}
+def get_fzf_dict(d, query, port):
+    return {"options": get_fzf_options(d, query, port)}
+
+
+def find_available_port():
+    for port in range(49152, 65536):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(("localhost", port)) != 0:
+                return port
+    raise RuntimeError("No open ports found")
 
 
 def get_selected_items(fd_command, fzf_dict):
-    command = f'{fd_command} | {FZF} {fzf_dict["options"]}'
+    command = f'{fd_command} | {FZF} --listen {fzf_port_} {fzf_dict["options"]}'
     proc = subprocess.run(command, shell=True, stdout=PIPE, text=True)
     return proc.stdout
 
@@ -191,7 +202,7 @@ def get_cursor_from_items(b, c, items):
 
 
 def get_fzf_api_url():
-    return f"http://localhost:{FZFZ_PORT}"
+    return f"http://localhost:{fzf_port_}"
 
 
 def update_search_origins(move):
@@ -268,8 +279,16 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
 class ThreadedHTTPServer(threading.Thread):
+    def bind_socket(self):
+        for port in range(49152, 65536):
+            try:
+                self.httpd = HTTPServer(("", port), RequestHandler)
+                return port
+            except Exception:
+                pass
+        raise ValueError("No available port")
+
     def run(self):
-        self.httpd = HTTPServer(("", SERVER_PORT), RequestHandler)
         self.httpd.serve_forever()
 
     def stop(self):
@@ -277,10 +296,10 @@ class ThreadedHTTPServer(threading.Thread):
 
 
 def main(args):
-    global path_notation_, entity_type_
+    global path_notation_, entity_type_, fzf_port_
     org_buffer, org_cursor = args[1], int(args[2])
 
-    start_server()
+    port = start_server()
 
     origin_path, query = get_origin_path_query(org_buffer, org_cursor)
     search_origins.append(origin_path)
@@ -288,7 +307,8 @@ def main(args):
     entity_type_ = "f"
 
     fd_command = get_fd_command(origin_path)
-    fzf_dict = get_fzf_dict(origin_path, query)
+    fzf_dict = get_fzf_dict(origin_path, query, port)
+    fzf_port_ = find_available_port()
     items = get_selected_items(fd_command, fzf_dict)
     if len(items) > 0:
         buffer = get_buffer_from_items(org_buffer, org_cursor, items)
