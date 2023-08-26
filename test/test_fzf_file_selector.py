@@ -1,4 +1,6 @@
+import create_fzf_command
 import fzf_file_selector
+import internal_server
 import pytest
 
 
@@ -10,7 +12,7 @@ import pytest
     ],
 )
 def test_get_absdir_view(d, home, expected):
-    response = fzf_file_selector.get_absdir_view(d, home_dir=home)
+    response = create_fzf_command.get_absdir_view(d, home_dir=home)
     assert response == expected
 
 
@@ -18,7 +20,7 @@ def test_get_absdir_view(d, home, expected):
     "d,expected", [(".", ".."), ("/Users", "/"), ("/", "/"), ("test", ".")]
 )
 def test_get_parent_dir(d, expected):
-    response = fzf_file_selector.get_parent_dir(d)
+    response = internal_server.get_parent_dir(d)
     assert response == expected
 
 
@@ -41,7 +43,7 @@ def test_get_origin_path_query(b, c, expected):
     ],
 )
 def test_get_fd_command(d, path_type, type_, expected):
-    response = fzf_file_selector.get_fd_command(d, path_type, type_)
+    response = internal_server.get_fd_command(d, path_type, type_)
     assert response == expected
 
 
@@ -66,7 +68,7 @@ def test_get_fd_command(d, path_type, type_, expected):
     ],
 )
 def test_option_to_shell_string(key, value, expected):
-    response = fzf_file_selector.option_to_shell_string(key, value)
+    response = create_fzf_command.option_to_shell_string(key, value)
     assert response == expected
 
 
@@ -84,7 +86,7 @@ def test_option_to_shell_string(key, value, expected):
     ],
 )
 def test_get_fzf_options_view(abs_dir, expected):
-    response = fzf_file_selector.get_fzf_options_view(abs_dir)
+    response = create_fzf_command.get_fzf_options_view(abs_dir)
     assert response == expected
 
 
