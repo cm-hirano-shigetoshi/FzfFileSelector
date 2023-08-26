@@ -21,6 +21,7 @@ entity_type_ = "f"
 def set_fzf_port(fzf_port):
     global fzf_port_
     fzf_port_ = fzf_port
+    return True
 
 
 def get_fd_command(d, path_notation=None, entity_type=None):
@@ -134,7 +135,10 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed_path = urllib.parse.urlparse(self.path)
         params = urllib.parse.parse_qs(parsed_path.query)
-        succeeded = request_to_fzf(params)
+        if "set_fzf_port" in params:
+            succeeded = set_fzf_port(int(params["set_fzf_port"][0]))
+        else:
+            succeeded = request_to_fzf(params)
         if succeeded:
             self.send_response(200)
             self.end_headers()
@@ -169,7 +173,7 @@ def start_server():
     return port
 
 
-def run(origin_path):
+def run_as_thread(origin_path):
     port = start_server()
 
     search_origins.append(origin_path)
@@ -179,6 +183,14 @@ def run(origin_path):
     return port
 
 
+def run(origin_path, server_port):
+    search_origins.append(origin_path)
+    update_path_notation("relative")
+    update_entity_type("f")
+
+    HTTPServer(("", int(server_port)), RequestHandler).serve_forever()
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
-    print(run(*args))
+    run(*args)

@@ -1,9 +1,9 @@
 import json
 import os
-import socket
 import sys
 
 import internal_server
+import find_available_port
 
 
 def option_to_shell_string(key, value):
@@ -69,22 +69,18 @@ def get_fzf_dict(d, query, server_port):
     return {"options": get_fzf_options(d, query, server_port)}
 
 
-def find_available_port():
-    for port in range(49152, 65536):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(("localhost", port)) != 0:
-                return port
-    raise RuntimeError("No open ports found")
-
-
 def run(origin_path, query, server_port):
     fd_command = internal_server.get_fd_command(origin_path)
-    fzf_port = find_available_port()
+    fzf_port = find_available_port.run(int(server_port) + 1)
     fzf_dict = get_fzf_dict(origin_path, query, server_port)
     return fd_command, fzf_dict, fzf_port
 
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    fd_command, fzf_dict = run(*args)
-    print(json.dumps({"fd_command": fd_command, "fzf_dict": fzf_dict}))
+    fd_command, fzf_dict, fzf_port = run(*args)
+    print(
+        json.dumps(
+            {"fd_command": fd_command, "fzf_dict": fzf_dict, "fzf_port": fzf_port}
+        )
+    )
