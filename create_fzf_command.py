@@ -37,6 +37,10 @@ def get_fzf_options_core(d, query, server_port):
             f'alt-d:execute-silent(curl "http://localhost:{server_port}?entity_type=d")',
             f'alt-f:execute-silent(curl "http://localhost:{server_port}?entity_type=f")',
             f'alt-s:execute-silent(curl "http://localhost:{server_port}?entity_type=A")',
+            f'alt-n:execute-silent(curl "http://localhost:{server_port}?file_filter=default")',
+            f'alt-i:execute-silent(curl "http://localhost:{server_port}?file_filter=no-ignore")',
+            f'alt-h:execute-silent(curl "http://localhost:{server_port}?file_filter=hidden")',
+            f'alt-l:execute-silent(curl "http://localhost:{server_port}?file_filter=unrestricted")',
         ],
     }
     return " ".join(options_to_shell_string(options))
