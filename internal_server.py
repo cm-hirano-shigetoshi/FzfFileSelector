@@ -175,13 +175,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 class ThreadedHTTPServer(threading.Thread):
     def bind_socket(self):
-        for port in range(49152, 65536):
-            try:
-                self.httpd = HTTPServer(("", port), RequestHandler)
-                return port
-            except Exception:
-                pass
-        raise ValueError("No available port")
+        self.httpd = HTTPServer(("", 0), RequestHandler)
+        return self.httpd.server_port
 
     def run(self):
         self.httpd.serve_forever()

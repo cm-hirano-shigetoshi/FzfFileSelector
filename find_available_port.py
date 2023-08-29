@@ -1,13 +1,10 @@
-import socket
 import sys
+from http.server import HTTPServer
 
 
-def run(start_port=49152):
-    for port in range(start_port, 65536):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(("localhost", port)) != 0:
-                return port
-    raise RuntimeError("No open ports found")
+def run():
+    httpd = HTTPServer(("", 0), None)
+    return httpd.server_port
 
 
 if __name__ == "__main__":

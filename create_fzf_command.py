@@ -2,8 +2,8 @@ import json
 import os
 import sys
 
-import internal_server
 import find_available_port
+import internal_server
 
 
 def option_to_shell_string(key, value):
@@ -75,7 +75,7 @@ def get_fzf_dict(d, query, server_port):
 
 def run(origin_path, query, server_port):
     fd_command = internal_server.get_fd_command(origin_path)
-    fzf_port = find_available_port.run(int(server_port) + 1)
+    fzf_port = find_available_port.run()
     fzf_dict = get_fzf_dict(origin_path, query, server_port)
     return fd_command, fzf_dict, fzf_port
 
